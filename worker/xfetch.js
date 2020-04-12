@@ -2,7 +2,6 @@
  * XFetch.js modified
  * A extremely simple fetch extension inspired by sindresorhus/ky.
  */
-import FormData from 'form-data';
 const xf = (() => {
 	const METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head']
 	class HTTPError extends Error {
