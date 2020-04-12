@@ -1,5 +1,19 @@
+self.props = {
+	title: 'GDIndex',
+	default_root_id: 'root',
+	client_id: '202264815644.apps.googleusercontent.com',
+	client_secret: 'X4Z3ca8xfWDb1Voo-F9a7ZxJ',
+	refresh_token: '',
+	auth: false,
+	user: '',
+	pass: '',
+	upload: false,
+	lite: false
+}
+
 import mime from 'mime'
 import GoogleDrive from './googleDrive'
+
 
 const gd = new GoogleDrive(self.props)
 
@@ -181,8 +195,9 @@ async function handleRequest(request) {
 	if (self.props.auth && !doBasicAuth(request)) {
 		return unauthorized()
 	}
-	request = Object.assign({}, request, new URL(request.url))
-	request.pathname = request.pathname
+	console.log("requets here-->",request);
+	request = Object.assign({}, request, new URL(request.parsedURL.href))
+	request.pathname = request.parsedURL.pathname
 		.split('/')
 		.map(decodeURIComponent)
 		.map(decodeURIComponent) // for some super special cases, browser will force encode it...   eg: +αあるふぁきゅん。 - +♂.mp3
@@ -250,6 +265,7 @@ ${fileht}
 }
 
 addEventListener('fetch', event => {
+	console.log('called-->', event.request);
 	event.respondWith(
 		handleRequest(event.request).catch(err => {
 			console.error(err)
