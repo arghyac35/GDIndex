@@ -4,6 +4,7 @@
 	"main": "index.js",
 	"license": "MIT",
 	"dependencies": {
+		"form-data": "^3.0.0",
 		"mime": "^2.4.4",
 		"path-to-regexp": "^3.1.0"
 	},
@@ -11,6 +12,7 @@
 		"bili": "^4.8.1"
 	},
 	"scripts": {
-		"build": "bili"
+		"build": "bili",
+		"build2": "rollup --config"
 	}
 }

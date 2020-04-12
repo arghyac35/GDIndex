@@ -43,6 +43,7 @@
 						class="pl-0"
 						tag="a"
 						:href="getFileUrl(item.resourcePath)"
+						v-if="item.fileName !== 'GdriveBot' && item.resourcePath !== '/GdriveBot/'"
 					>
 						<v-list-item-avatar class="ma-0">
 							<v-icon>{{ item.icon }}</v-icon>
@@ -203,6 +204,7 @@ export default {
 			})
 		},
 		getFileUrl(path) {
+			console.log('path is-->',path);
 			const { rootId } = this.$route.query
 			let u = nodeUrl.resolve(
 				window.props.api,
@@ -214,6 +216,7 @@ export default {
 			if (rootId) {
 				u += '?rootId=' + rootId
 			}
+			console.log('u is-->',u);
 			return u
 		},
 		async renderPath(path, rootId) {

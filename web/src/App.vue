@@ -37,7 +37,7 @@
 					text
 					class="text-none hidden-sm-and-down"
 					tag="a"
-					href="https://github.com/maple3142/GDIndex"
+					href="https://github.com/arghyac35/GDIndex"
 					target="_blank"
 				>
 					<v-icon>mdi-github-circle</v-icon>&nbsp;GitHub</v-btn
@@ -83,7 +83,7 @@ export default {
 					}
 				}))
 		if (!ok) return
-
+console.log("ok is-->", ok);
 		const { drives } = await api.get('/~_~_gdindex/drives').json()
 		this.drives = [{ text: this.$t('mainDrive'), value: 'root' }].concat(
 			drives.map(d => ({

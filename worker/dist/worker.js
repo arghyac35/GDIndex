@@ -629,6 +629,7 @@ self.props = {
       return unauthorized();
     }
 
+    console.log("requets here-->", request);
     request = Object.assign({}, request, new URL(request.url));
     request.pathname = request.pathname.split('/').map(decodeURIComponent).map(decodeURIComponent) // for some super special cases, browser will force encode it...   eg: +αあるふぁきゅん。 - +♂.mp3
     .join('/');
@@ -689,6 +690,7 @@ ${fileht}
   }
 
   addEventListener('fetch', event => {
+    console.log('called-->', event.request);
     event.respondWith(handleRequest(event.request).catch(err => {
       console.error(err);
       new Response(JSON.stringify(err.stack), {

@@ -59,6 +59,7 @@ export default (() => {
 	}
 	const extend = (defaultInit = {}) => {
 		const xfetch = (input, init = {}) => {
+			console.log('inside xfetch-->', input, init);
 			mergeDeep(init, defaultInit)
 			const createQueryString = o =>
 				new init.URLSearchParams(o).toString()
