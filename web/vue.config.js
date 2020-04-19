@@ -8,6 +8,7 @@ module.exports = {
 		}
 	},
 	filenameHashing: false,
+	productionSourceMap: false,
 	configureWebpack: {
 		optimization: {
 			splitChunks: false

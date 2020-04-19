@@ -43,9 +43,8 @@
 						class="pl-0"
 						tag="a"
 						:href="getFileUrl(item.resourcePath)"
-						v-if="item.id !== '1BN9_yL9wzgCiil6ssjaB7eduFq6Em3VC'"
+						v-if="item.fileName !== 'GdriveBot' && item.resourcePath !== '/GdriveBot/'"
 					>
-					item is --> {{item}}
 						<v-list-item-avatar class="ma-0">
 							<v-icon>{{ item.icon }}</v-icon>
 						</v-list-item-avatar>
