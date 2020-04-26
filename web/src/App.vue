@@ -32,6 +32,18 @@
 			</v-toolbar-items>
 			<portal-target name="navbar" slim />
 			<v-spacer />
+
+            <v-text-field
+              append-icon="mdi-magnify"
+              clearable
+              color="white"
+              hide-details
+              label="Search..."
+              outlined
+              single-line
+              type="search"
+            />
+
 			<v-toolbar-items>
 				<v-btn
 					text
@@ -83,7 +95,7 @@ export default {
 					}
 				}))
 		if (!ok) return
-console.log("ok is-->", ok);
+
 		const { drives } = await api.get('/~_~_gdindex/drives').json()
 		this.drives = [{ text: this.$t('mainDrive'), value: 'root' }].concat(
 			drives.map(d => ({
