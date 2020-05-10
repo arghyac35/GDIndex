@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 	self.props = {
 		title: 'GDIndex',
 		default_root_id: 'root',
@@ -12,6 +13,21 @@
 		upload: false,
 		lite: false
 	};
+=======
+self.props = {
+	title: 'GDIndex',
+	default_root_id: 'root',
+	client_id: '202264815644.apps.googleusercontent.com',
+	client_secret: 'X4Z3ca8xfWDb1Voo-F9a7ZxJ',
+	refresh_token: '',
+	auth: false,
+	user: '',
+	pass: '',
+	upload: false,
+	lite: false,
+	url: 'xyz.com'
+};
+>>>>>>> Add support for dynamic github url
 (function () {
   'use strict';
 
@@ -2702,7 +2718,7 @@
   }
 
   const gd = new GoogleDrive(self.props);
-  const HTML = `<!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><title>${self.props.title}</title><link href="/~_~_gdindex/resources/css/app.css" rel=stylesheet></head><body><script>window.props = { title: '${self.props.title}', default_root_id: '${self.props.default_root_id}', api: location.protocol + '//' + location.host, upload: ${self.props.upload} }<\/script><div id=app></div><script src="/~_~_gdindex/resources/js/app.js"><\/script></body></html>`;
+  const HTML = `<!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><title>${self.props.title}</title><link href="/~_~_gdindex/resources/css/app.css" rel=stylesheet></head><body><script>window.props = { title: '${self.props.title}', default_root_id: '${self.props.default_root_id}', api: location.protocol + '//' + location.host, upload: ${self.props.upload}, url: '${self.props.url}' }<\/script><div id=app></div><script src="/~_~_gdindex/resources/js/app.js"><\/script></body></html>`;
 
   async function onGet(request) {
     let {
@@ -2712,7 +2728,7 @@
 
     if (path.startsWith('/~_~_gdindex/resources/')) {
       const remain = path.replace('/~_~_gdindex/resources/', '');
-      const r = await fetch(`https://raw.githubusercontent.com/maple3142/GDIndex/master/web/dist/${remain}`);
+      const r = await fetch(`https://raw.githubusercontent.com/arghyac35/GDIndex/dynamicUrl/web/dist/${remain}`);
       return new Response(r.body, {
         headers: {
           'Content-Type': mime.getType(remain) + '; charset=utf-8',
