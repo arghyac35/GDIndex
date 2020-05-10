@@ -18,6 +18,7 @@ self.props = {
 	user: '',
 	pass: '',
 	upload: false,
-	lite: false
+	lite: false,
+	url: 'xyz.com'
 };`.slice(1)
 }

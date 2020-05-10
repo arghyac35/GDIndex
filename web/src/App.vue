@@ -37,8 +37,9 @@
 					text
 					class="text-none hidden-sm-and-down"
 					tag="a"
-					href="https://github.com/maple3142/GDIndex"
+					:href="url"
 					target="_blank"
+					v-if="url"
 				>
 					<v-icon>mdi-github-circle</v-icon>&nbsp;GitHub</v-btn
 				>
@@ -55,7 +56,8 @@ import LoginDialog from './components/LoginDialog.vue'
 
 export default {
 	props: {
-		title: String
+		title: String,
+		url: String
 	},
 	data() {
 		return {
