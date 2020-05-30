@@ -232,31 +232,35 @@ export default {
 				// User had initiated other folder navigation request
 				return
 			}
-			this.list = files.map((f) => {
-				f.mimeType = f.mimeType.replace('; charset=utf-8', '')
-				const isFolder =
-					f.mimeType === 'application/vnd.google-apps.folder'
-				const isGoogleFile = f.mimeType.includes('vnd.google-apps')
-				const resourcePath =
-					nodeUrl.resolve(path, f.name) + (isFolder ? '/' : '')
-				const o = {
-					fileName: f.name,
-					modifiedTime: format(
-						new Date(f.modifiedTime),
-						'yyyy/MM/dd HH:mm:ss'
-					),
-					isFolder,
-					isGoogleFile,
-					mimeType: f.mimeType,
-					fileSize: f.size ? prettyBytes(parseInt(f.size)) : '',
-					resourcePath,
-					icon: ICON_NAME[f.mimeType] || 'mdi-file',
-				}
-				if (f.mimeType in SUPPORTED_TYPES) {
-					o.opener = SUPPORTED_TYPES[f.mimeType]
-				}
-				return o
-			})
+			this.list = files
+				.filter((fi) => {
+					return fi.name !== 'GdriveBot'
+				})
+				.map((f) => {
+					f.mimeType = f.mimeType.replace('; charset=utf-8', '')
+					const isFolder =
+						f.mimeType === 'application/vnd.google-apps.folder'
+					const isGoogleFile = f.mimeType.includes('vnd.google-apps')
+					const resourcePath =
+						nodeUrl.resolve(path, f.name) + (isFolder ? '/' : '')
+					const o = {
+						fileName: f.name,
+						modifiedTime: format(
+							new Date(f.modifiedTime),
+							'yyyy/MM/dd HH:mm:ss'
+						),
+						isFolder,
+						isGoogleFile,
+						mimeType: f.mimeType,
+						fileSize: f.size ? prettyBytes(parseInt(f.size)) : '',
+						resourcePath,
+						icon: ICON_NAME[f.mimeType] || 'mdi-file',
+					}
+					if (f.mimeType in SUPPORTED_TYPES) {
+						o.opener = SUPPORTED_TYPES[f.mimeType]
+					}
+					return o
+				})
 			this.loading = false
 		},
 		handlePath(path, query) {
