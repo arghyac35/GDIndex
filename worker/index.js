@@ -8,7 +8,7 @@ const HTML = `<!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta http-
 async function onGet(request) {
 	let { pathname: path } = request
 	const rootId =
-		request.searchParams.get('rootId') || self.props.default_root_id
+		request.searchParams.get('rootId') || self.props.default_root_id;
 	if (path.startsWith('/~_~_gdindex/resources/')) {
 		const remain = path.replace('/~_~_gdindex/resources/', '')
 		const r = await fetch(
@@ -33,29 +33,42 @@ async function onGet(request) {
 			}
 		})
 	} else {
-		const result = await gd.getMetaByPath(path, rootId)
+		const result = await gd.getMetaByPath(path, rootId);
 		if (!result) {
 			return new Response('null', {
 				headers: {
 					'Content-Type': 'application/json'
 				},
 				status: 404
-			})
+			});
 		}
-		const isGoogleApps = result.mimeType.includes('vnd.google-apps')
+		const isGoogleApps = result.mimeType.includes('vnd.google-apps');
 		if (!isGoogleApps) {
-			const r = await gd.download(result.id, request.headers.get('Range'))
-			const h = new Headers(r.headers)
+			let r;
+			try {
+				r = await gd.download(result.id, request.headers.get('Range'));
+			} catch (error) {
+				const result = await gd.getMetaByPath(path, rootId);
+				if (!result) {
+					return new Response('null', {
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						status: 404
+					});
+				}
+			}
+			const h = new Headers(r.headers);
 			h.set(
 				'Content-Disposition',
 				`inline; filename*=UTF-8''${encodeURIComponent(result.name)}`
-			)
+			);
 			return new Response(r.body, {
 				status: r.status,
 				headers: h
-			})
+			});
 		} else {
-			return Response.redirect(result.webViewLink, 302)
+			return Response.redirect(result.webViewLink, 302);
 		}
 	}
 }
