@@ -62,15 +62,16 @@ class GoogleDrive {
 		this.expires = Date.now() + 3500 * 1000 // normally, it should expiers after 3600 seconds
 	}
 
-	async initializeClient2() {
+	async initializeClient2(credNumber = 0, checkExpire = true) {
 		// any method that do api call must call this beforehand
-		if (Date.now() < this.expires2) return;
+		if (checkExpire && (Date.now() < this.expires2)) return;
+		console.log(`Auth using: ${credNumber}`);
 		const resp = await xf
 			.post('https://www.googleapis.com/oauth2/v4/token', {
 				urlencoded: {
-					client_id: this.auth.client_id,
-					client_secret: this.auth.client_secret,
-					refresh_token: this.auth.refresh_token,
+					client_id: this.auth.client_ids[credNumber],
+					client_secret: this.auth.client_secrets[credNumber],
+					refresh_token: this.auth.refresh_tokens[credNumber],
 					grant_type: 'refresh_token'
 				}
 			}).json();
@@ -87,8 +88,8 @@ class GoogleDrive {
 		await this.initializeClient()
 		return this.client.get('drives').json()
 	}
-	async download(id, range = '') {
-		await this.initializeClient2();
+	async download(id, range = '', credNumber = 0) {
+		await this.initializeClient2(credNumber, false);
 		return this.client.get(`files/${id}`, {
 			qs: {
 				includeItemsFromAllDrives: true,
@@ -105,8 +106,8 @@ class GoogleDrive {
 		if (!id) return null
 		return this.download(id, range)
 	}
-	async getMeta(id) {
-		await this.initializeClient()
+	async getMeta(id, credNumber = 0) {
+		await this.initializeClient2(credNumber);
 		return this.client
 			.get(`files/${id}`, {
 				qs: {
@@ -117,13 +118,13 @@ class GoogleDrive {
 			})
 			.json()
 	}
-	async getMetaByPath(path, rootId = 'root') {
-		const id = await this.getId(path, rootId)
-		if (!id) return null
-		return this.getMeta(id)
+	async getMetaByPath(path, rootId = 'root', credNumber = 0) {
+		const id = await this.getId(path, rootId, credNumber);
+		if (!id) return null;
+		return this.getMeta(id, credNumber);
 	}
 	async listFolder(id) {
-		await this.initializeClient()
+		await this.initializeClient();
 		const getList = pageToken => {
 			const qs = {
 				includeItemsFromAllDrives: true,
@@ -157,19 +158,21 @@ class GoogleDrive {
 		if (!id) return null
 		return this.listFolder(id)
 	}
-	async getId(path, rootId = 'root') {
-		const toks = path.split('/').filter(Boolean)
-		let id = rootId
+	async getId(path, rootId = 'root', credNumber = 0) {
+		const toks = path.split('/').filter(Boolean);
+		let id = rootId;
 		for (const tok of toks) {
-			id = await this._getId(id, tok)
+			id = await this._getId(id, tok, credNumber);
+			// console.log('tmp id-->', id);
 		}
-		return id
+		return id;
 	}
-	async _getId(parentId, childName) {
+	async _getId(parentId, childName, credNumber = 0) {
 		if (this._getIdCache.has(parentId + childName)) {
-			return this._getIdCache.get(parentId + childName)
+			return this._getIdCache.get(parentId + childName);
 		}
-		await this.initializeClient()
+		// console.log('parent-->', parentId, ' Child--->', childName)
+		await this.initializeClient2(credNumber);
 		childName = childName.replace(/\'/g, `\\'`) // escape single quote
 		const resp = await this.client
 			.get('files', {

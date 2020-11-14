@@ -1,33 +1,22 @@
-<<<<<<< HEAD
-	self.props = {
-		title: 'GDIndex',
-		default_root_id: 'root',
-		client_id: '202264815644.apps.googleusercontent.com',
-		client_secret: 'X4Z3ca8xfWDb1Voo-F9a7ZxJ',
-		refresh_token: '',
-		service_account: false,
-		service_account_json: {},
-		auth: false,
-		user: '',
-		pass: '',
-		upload: false,
-		lite: false
-	};
-=======
-self.props = {
-	title: 'GDIndex',
-	default_root_id: 'root',
-	client_id: '202264815644.apps.googleusercontent.com',
-	client_secret: 'X4Z3ca8xfWDb1Voo-F9a7ZxJ',
-	refresh_token: '',
-	auth: false,
-	user: '',
-	pass: '',
-	upload: false,
-	lite: false,
-	url: 'xyz.com'
-};
->>>>>>> Add support for dynamic github url
+		self.props = {
+			title: 'GDIndex',
+			default_root_id: 'root',
+			default_root_id2: 'root',
+			client_id: '202264815644.apps.googleusercontent.com',
+			client_secret: 'X4Z3ca8xfWDb1Voo-F9a7ZxJ',
+			refresh_token: '',
+			service_account: false,
+			service_account_json: {},
+			auth: false,
+			user: '',
+			pass: '',
+			upload: false,
+			lite: false,
+			url: 'xyz.com',
+			client_ids: ['202264815644.apps.googleusercontent.com'],
+			client_secrets: ['X4Z3ca8xfWDb1Voo-F9a7ZxJ'],
+			refresh_tokens: []
+		};
 (function () {
   'use strict';
 
@@ -2510,6 +2499,7 @@ self.props = {
       this.auth = auth;
       this.expires = 0;
       this._getIdCache = new Map();
+      this.expires1 = 0;
     }
 
     async initializeClient() {
@@ -2558,13 +2548,34 @@ self.props = {
       this.expires = Date.now() + 3500 * 1000; // normally, it should expiers after 3600 seconds
     }
 
+    async initializeClient2(credNumber = 0, checkExpire = true) {
+      // any method that do api call must call this beforehand
+      if (checkExpire && Date.now() < this.expires2) return;
+      console.log(`Auth using: ${credNumber}`);
+      const resp = await xf.post('https://www.googleapis.com/oauth2/v4/token', {
+        urlencoded: {
+          client_id: this.auth.client_ids[credNumber],
+          client_secret: this.auth.client_secrets[credNumber],
+          refresh_token: this.auth.refresh_tokens[credNumber],
+          grant_type: 'refresh_token'
+        }
+      }).json();
+      this.client = xf.extend({
+        baseURI: 'https://www.googleapis.com/drive/v3/',
+        headers: {
+          Authorization: `Bearer ${resp.access_token}`
+        }
+      });
+      this.expires2 = Date.now() + 3500 * 1000; // normally, it should expiers after 3600 seconds
+    }
+
     async listDrive() {
       await this.initializeClient();
       return this.client.get('drives').json();
     }
 
-    async download(id, range = '') {
-      await this.initializeClient();
+    async download(id, range = '', credNumber = 0) {
+      await this.initializeClient2(credNumber, false);
       return this.client.get(`files/${id}`, {
         qs: {
           includeItemsFromAllDrives: true,
@@ -2583,8 +2594,8 @@ self.props = {
       return this.download(id, range);
     }
 
-    async getMeta(id) {
-      await this.initializeClient();
+    async getMeta(id, credNumber = 0) {
+      await this.initializeClient2(credNumber);
       return this.client.get(`files/${id}`, {
         qs: {
           includeItemsFromAllDrives: true,
@@ -2594,10 +2605,10 @@ self.props = {
       }).json();
     }
 
-    async getMetaByPath(path, rootId = 'root') {
-      const id = await this.getId(path, rootId);
+    async getMetaByPath(path, rootId = 'root', credNumber = 0) {
+      const id = await this.getId(path, rootId, credNumber);
       if (!id) return null;
-      return this.getMeta(id);
+      return this.getMeta(id, credNumber);
     }
 
     async listFolder(id) {
@@ -2642,23 +2653,24 @@ self.props = {
       return this.listFolder(id);
     }
 
-    async getId(path, rootId = 'root') {
+    async getId(path, rootId = 'root', credNumber = 0) {
       const toks = path.split('/').filter(Boolean);
       let id = rootId;
 
       for (const tok of toks) {
-        id = await this._getId(id, tok);
+        id = await this._getId(id, tok, credNumber); // console.log('tmp id-->', id);
       }
 
       return id;
     }
 
-    async _getId(parentId, childName) {
+    async _getId(parentId, childName, credNumber = 0) {
       if (this._getIdCache.has(parentId + childName)) {
         return this._getIdCache.get(parentId + childName);
-      }
+      } // console.log('parent-->', parentId, ' Child--->', childName)
 
-      await this.initializeClient();
+
+      await this.initializeClient2(credNumber);
       childName = childName.replace(/\'/g, `\\'`); // escape single quote
 
       const resp = await this.client.get('files', {
@@ -2748,30 +2760,65 @@ self.props = {
         }
       });
     } else {
-      const result = await gd.getMetaByPath(path, rootId);
+      return await downloadFile(request, path, rootId);
+    }
+  }
 
-      if (!result) {
-        return new Response('null', {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          status: 404
-        });
+  async function downloadFile(request, path, rootId, credNumber = 0, result = '') {
+    console.log('Rootid: ', rootId);
+
+    if (!result) {
+      result = await gd.getMetaByPath(path, rootId, credNumber);
+    }
+
+    if (!result) {
+      return new Response('File not found', {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        status: 404
+      });
+    }
+
+    const isGoogleApps = result.mimeType.includes('vnd.google-apps');
+
+    if (!isGoogleApps) {
+      console.log('File id-->', result.id);
+      let r;
+
+      try {
+        r = await gd.download(result.id, request.headers.get('Range'), credNumber);
+      } catch (error) {
+        console.error('Error download file get---->', error.message);
+
+        if (credNumber < self.props.client_ids.length - 1) {
+          credNumber++; //change credentials
+
+          console.log(`trying using ${credNumber} cred`);
+          return await downloadFile(request, path, rootId, credNumber, result);
+        }
+
+        if (rootId === self.props.default_root_id2) {
+          return new Response('Download quota over for this file, please try again few hours later or 24hr later, as download quota usually resets after every 24hr', {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            status: 403
+          });
+        }
+
+        console.log('Changing rootid---');
+        return await downloadFile(request, path, self.props.default_root_id2, 0);
       }
 
-      const isGoogleApps = result.mimeType.includes('vnd.google-apps');
-
-      if (!isGoogleApps) {
-        const r = await gd.download(result.id, request.headers.get('Range'));
-        const h = new Headers(r.headers);
-        h.set('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(result.name)}`);
-        return new Response(r.body, {
-          status: r.status,
-          headers: h
-        });
-      } else {
-        return Response.redirect(result.webViewLink, 302);
-      }
+      const h = new Headers(r.headers);
+      h.set('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(result.name)}`);
+      return new Response(r.body, {
+        status: r.status,
+        headers: h
+      });
+    } else {
+      return Response.redirect(result.webViewLink, 302);
     }
   }
 

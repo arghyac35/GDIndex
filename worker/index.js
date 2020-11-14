@@ -6,14 +6,13 @@ const gd = new GoogleDrive(self.props)
 const HTML = `<!DOCTYPE html><html lang=en><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><title>${self.props.title}</title><link href="/~_~_gdindex/resources/css/app.css" rel=stylesheet></head><body><script>window.props = { title: '${self.props.title}', default_root_id: '${self.props.default_root_id}', api: location.protocol + '//' + location.host, upload: ${self.props.upload}, url: '${self.props.url}' }<\/script><div id=app></div><script src="/~_~_gdindex/resources/js/app.js"><\/script></body></html>`
 
 async function onGet(request) {
-	let { pathname: path } = request
-	const rootId =
-		request.searchParams.get('rootId') || self.props.default_root_id;
+	let { pathname: path } = request;
+	const rootId = request.searchParams.get('rootId') || self.props.default_root_id;
 	if (path.startsWith('/~_~_gdindex/resources/')) {
 		const remain = path.replace('/~_~_gdindex/resources/', '')
 		const r = await fetch(
 			`https://raw.githubusercontent.com/arghyac35/GDIndex/master/web/dist/${remain}`
-		)
+		);
 		return new Response(r.body, {
 			headers: {
 				'Content-Type': mime.getType(remain) + '; charset=utf-8',
@@ -33,45 +32,61 @@ async function onGet(request) {
 			}
 		})
 	} else {
-		const result = await gd.getMetaByPath(path, rootId);
-		if (!result) {
-			return new Response('null', {
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				status: 404
-			});
-		}
-		const isGoogleApps = result.mimeType.includes('vnd.google-apps');
-		if (!isGoogleApps) {
-			let r;
-			try {
-				r = await gd.download(result.id, request.headers.get('Range'));
-			} catch (error) {
-				const result = await gd.getMetaByPath(path, rootId);
-				if (!result) {
-					return new Response('null', {
-						headers: {
-							'Content-Type': 'application/json'
-						},
-						status: 404
-					});
-				}
-			}
-			const h = new Headers(r.headers);
-			h.set(
-				'Content-Disposition',
-				`inline; filename*=UTF-8''${encodeURIComponent(result.name)}`
-			);
-			return new Response(r.body, {
-				status: r.status,
-				headers: h
-			});
-		} else {
-			return Response.redirect(result.webViewLink, 302);
-		}
+		return await downloadFile(request, path, rootId);
 	}
 }
+
+async function downloadFile(request, path, rootId, credNumber = 0, result = '') {
+	console.log('Rootid: ', rootId);
+	if (!result) {
+		result = await gd.getMetaByPath(path, rootId, credNumber);
+	}
+	if (!result) {
+		return new Response('File not found', {
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			status: 404
+		});
+	}
+	const isGoogleApps = result.mimeType.includes('vnd.google-apps');
+	if (!isGoogleApps) {
+		console.log('File id-->', result.id);
+		let r;
+		try {
+			r = await gd.download(result.id, request.headers.get('Range'), credNumber);
+		} catch (error) {
+			console.error('Error download file get---->', error.message);
+			if (credNumber < (self.props.client_ids.length - 1)) {
+				credNumber++; //change credentials
+				console.log(`trying using ${credNumber} cred`);
+				return await downloadFile(request, path, rootId, credNumber, result);
+			}
+			if (rootId === self.props.default_root_id2) {
+				return new Response('Download quota over for this file, please try again few hours later or 24hr later, as download quota usually resets after every 24hr', {
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					status: 403
+				});
+			}
+			console.log('Changing rootid---');
+			return await downloadFile(request, path, self.props.default_root_id2, 0);
+		}
+		const h = new Headers(r.headers);
+		h.set(
+			'Content-Disposition',
+			`inline; filename*=UTF-8''${encodeURIComponent(result.name)}`
+		);
+		return new Response(r.body, {
+			status: r.status,
+			headers: h
+		});
+	} else {
+		return Response.redirect(result.webViewLink, 302);
+	}
+}
+
 async function onPost(request) {
 	let { pathname: path } = request
 	const rootId =
